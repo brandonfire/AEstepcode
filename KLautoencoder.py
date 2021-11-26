@@ -1,4 +1,5 @@
 #Autoencoder visulization of MINST data
+#build for testing our attack
 #Chengbin Hu
 
 import tensorflow as tf

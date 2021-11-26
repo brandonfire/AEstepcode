@@ -460,7 +460,7 @@ def testwithnoiseattack(Autoencoder_model,Class_model,data_dir,steps,randomselec
                 baseimage = maximage
                 for i in range(randomselectedsamples):
                     noise = np.random.rand(304,304,3) 
-                    tmptrain = list(x_train[photonumber])#np.zeros((304,304,3))
+                    tmptrain = np.copy(x_train[photonumber])#np.zeros((304,304,3))
                     chooseEN, chooseDE = selectfrompool(EN,DE, noise_rate/steps)
                     for e in chooseEN:
                         tmptrain[e[0]][e[1]][e[2]] += 1

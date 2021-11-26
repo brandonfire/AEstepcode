@@ -1,4 +1,4 @@
-#Autoencoder for ImageNet
+#Autoencoder with target attack.
 import itertools
 import os
 import tensorflow as tf
@@ -296,7 +296,7 @@ def generateENDE(Image, AEmodel, threshold):
     for x in range(len(Image)):
         for y in range(len(Image[0])):
             for z in range(len(Image[0][0])):
-                Image[x][y][z] += 1
+                Image[x][y][z] += 0.1
                 encoded_img = AEmodel.encoder(np.asarray([Image])).numpy()
                 decoded_img = AEmodel.decoder(encoded_img).numpy()
                 tmploss = sum(sum(tf.keras.losses.MSE(Image,decoded_img[0]))).numpy()
@@ -305,7 +305,7 @@ def generateENDE(Image, AEmodel, threshold):
     for x in range(len(Image)):
         for y in range(len(Image[0])):
             for z in range(len(Image[0][0])):
-                Image[x][y][z] -= 1
+                Image[x][y][z] -= 0.1
                 encoded_img = AEmodel.encoder(np.asarray([Image])).numpy()
                 decoded_img = AEmodel.decoder(encoded_img).numpy()
                 tmploss = sum(sum(tf.keras.losses.MSE(Image,decoded_img[0]))).numpy()

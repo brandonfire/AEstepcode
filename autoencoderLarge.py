@@ -1,4 +1,5 @@
 #Autoencoder visulization of lung image data
+#With unsupervised attack method
 import itertools
 import os
 import tensorflow as tf

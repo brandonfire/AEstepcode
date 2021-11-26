@@ -480,7 +480,7 @@ def testwithnoiseattack(Autoencoder_model,Class_model,data_dir,steps,randomselec
                     decoded_imgs1 = autoencoder.decoder(encoded_imgs1).numpy()
                     tmploss = sum(sum(tf.keras.losses.MSE(x_train[photonumber],decoded_imgs1[0]))).numpy()
                     classpredict = classfymodel(encoded_imgs)
-                    tmpclassprobability = classfymodel(encoded_imgs)[targetclass]
+                    tmpclassprobability = classpredict[targetclass]
                     print("Current loss:", tmploss)
                     print("Current classification probability", classpredict)
                     

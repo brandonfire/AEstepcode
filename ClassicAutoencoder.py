@@ -290,24 +290,25 @@ def generateENDE(Image, AEmodel, threshold):
     EN, IN = [],[]
     encoded_img = AEmodel.encoder(np.asarray([Image])).numpy()
     decoded_img = AEmodel.decoder(encoded_img).numpy()
-    baselose = sum(sum(tf.keras.losses.MSE(Image,decoded_img))).numpy()
+    baselose = sum(sum(tf.keras.losses.MSE(Image,decoded_img[0]))).numpy()
+    print(baselose,"This is baseloss")
 
     for x in range(len(Image)):
         for y in range(len(Image[0])):
-            for z in range(Image[0][0])):
+            for z in range(len(Image[0][0])):
                 Image[x][y][z] += 1
                 encoded_img = AEmodel.encoder(np.asarray([Image])).numpy()
                 decoded_img = AEmodel.decoder(encoded_img).numpy()
-                tmploss = sum(sum(tf.keras.losses.MSE(Image,decoded_img))).numpy()
+                tmploss = sum(sum(tf.keras.losses.MSE(Image,decoded_img[0]))).numpy()
                 if tmploss - baselose > threshold:
                     EN.append([x,y,z])
     for x in range(len(Image)):
         for y in range(len(Image[0])):
-            for z in range(Image[0][0])):
+            for z in range(len(Image[0][0])):
                 Image[x][y][z] -= 1
                 encoded_img = AEmodel.encoder(np.asarray([Image])).numpy()
                 decoded_img = AEmodel.decoder(encoded_img).numpy()
-                tmploss = sum(sum(tf.keras.losses.MSE(Image,decoded_img))).numpy()
+                tmploss = sum(sum(tf.keras.losses.MSE(Image,decoded_img[0]))).numpy()
                 if tmploss - baselose > threshold:
                     DE.append([x,y,z])
     return EN,DE
@@ -325,7 +326,7 @@ def selectfrompool(EN,DE,rate):
 
 
 
-def testwithnoiseattack(Autoencoder_model,Class_model,data_dir,steps,randomselectedsamples ,noise_rate):
+def testwithnoiseattack(Autoencoder_model,Class_model,data_dir,steps,randomselectedsamples ,noise_rate, targetclass):
     autoencoder = tf.keras.models.load_model(Autoencoder_model) #load autoencoder
     classfymodel = tf.keras.models.load_model(Class_model) #load downstream classification model
     pixels = 304
@@ -400,6 +401,8 @@ def testwithnoiseattack(Autoencoder_model,Class_model,data_dir,steps,randomselec
         else:
             break
     print(x_train.shape,y_train.shape,x_test.shape,y_test.shape)
+    success_attack = 0
+    total = 0
     for imgs in train_generator:
         x_train = imgs[0] #depends on the data size, this loop takes hours to days to be done.
         y_train = imgs[1]
@@ -410,15 +413,15 @@ def testwithnoiseattack(Autoencoder_model,Class_model,data_dir,steps,randomselec
             noisetrain = x_train + noise*noise_rate
             shownoise = np.random.rand(x_train.shape[0],304,304)
             
-            for x in range(len(x_train[photonumber])):
-                for y in range(len(x_train[photonumber][0])):
-                    for z in range(len(x_train[photonumber][0][0])):
+            #for x in range(len(x_train[photonumber])):
+            #    for y in range(len(x_train[photonumber][0])):
+            #        for z in range(len(x_train[photonumber][0][0])):
 
 
-                            if randomselect(noise_rate):
-                                noisetrain[photonumber+i][x][y][z] = noise[photonumber+i][x][y][z] + x_train[photonumber+i][x][y][z]
-                            else:
-                                noisetrain[photonumber+i][x][y][z] = x_train[photonumber+i][x][y][z]
+            #                if randomselect(noise_rate):
+            #                    noisetrain[photonumber+i][x][y][z] = noise[photonumber+i][x][y][z] + x_train[photonumber+i][x][y][z]
+            #                else:
+            #                    noisetrain[photonumber+i][x][y][z] = x_train[photonumber+i][x][y][z]
             encoded_imgs = autoencoder.encoder(np.asarray([x_train[photonumber]])).numpy()
             decoded_imgs = autoencoder.decoder(encoded_imgs).numpy()
             encoded_imgs1 = autoencoder.encoder(np.asarray([noisetrain[photonumber]])).numpy()
@@ -444,8 +447,8 @@ def testwithnoiseattack(Autoencoder_model,Class_model,data_dir,steps,randomselec
             maxloss = startloss
             maximage = noisetrain[photonumber]
             
-            minclassprobability = classpredict[targetclass]
-            maxclassprobability = classpredict[targetclass]
+            minclassprobability = classpredict[0][targetclass]
+            maxclassprobability = classpredict[0][targetclass]
 
             minencoded = maxencoded = encoded_imgs1[0]
             mindecoded = maxdecoded = decoded_imgs1[0]
@@ -480,7 +483,7 @@ def testwithnoiseattack(Autoencoder_model,Class_model,data_dir,steps,randomselec
                     decoded_imgs1 = autoencoder.decoder(encoded_imgs1).numpy()
                     tmploss = sum(sum(tf.keras.losses.MSE(x_train[photonumber],decoded_imgs1[0]))).numpy()
                     classpredict = classfymodel(encoded_imgs)
-                    tmpclassprobability = classpredict[targetclass]
+                    tmpclassprobability = classpredict[0][targetclass]
                     print("Current loss:", tmploss)
                     print("Current classification probability", classpredict)
                     
@@ -513,7 +516,12 @@ def testwithnoiseattack(Autoencoder_model,Class_model,data_dir,steps,randomselec
             maxcrossloss = tf.keras.losses.binary_crossentropy(maxclass,y_train[photonumber]).numpy()
             
             print(minloss,maxloss,maxcrossloss,maxclass)
-    
+        if max(classpredict[0]) == classpredict[0][targetclass]:
+            success_attack += 1
+        total += 1
+    attack_succss_rate = success_attack/total
+    print("Attack succss rate is", attack_succss_rate)
+
     plt.figure(figsize=(20, 4))
     n = 2
     
